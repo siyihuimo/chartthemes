@@ -1,70 +1,59 @@
 ﻿#include "ChartView.h"
+#include <QApplication>
+#include <QDebug>
 
-ChartView::ChartView(QChart *chart, QChartView *parent)
+ChartView::ChartView(QWidget *parent)
 {
-    //
+
 }
 
 ChartView::~ChartView()
 {
-    //
-}
 
-void ChartView::saveAxisRange()
-{
-    //
 }
 
 void ChartView::mousePressEvent(QMouseEvent *event)
 {
-    if (event->button() == Qt::LeftButton)
+    QChartView::mousePressEvent(event);
+
+    if(event->buttons() == Qt::LeftButton)
     {
-        m_lastPoint = event->pos();
-        m_isPress = true;
+        m_bHoldMove = true;
+        QCursor cursor;
+        cursor.setShape(Qt::ClosedHandCursor);
+        QApplication::setOverrideCursor(cursor); // 使鼠标指针暂时改变形状
+        m_OffsetPoint = event->globalPos()-pos();
     }
+    update();
 }
 
 void ChartView::mouseMoveEvent(QMouseEvent *event)
 {
-    if (!m_coordItem)
+    if((event->buttons() & Qt::LeftButton )&& m_bHoldMove)
     {
-        m_coordItem = new QGraphicsSimpleTextItem(this->chart());
-        m_coordItem->setZValue(5);
-        m_coordItem->setPos(100, 60);
-        m_coordItem->show();
-    }
-    const QPoint curPos = event->pos();
-    QPointF curVal = this->chart()->mapToValue(QPointF(curPos));
-    QString coordStr = QString("X = %1, Y = %2").arg(curVal.x()).arg(curVal.y());
-    m_coordItem->setText(coordStr);
+        QPoint temp;
+        temp = event->globalPos() - m_OffsetPoint;
+        // move(temp);
 
-    if (m_isPress)
-    {
-        QPoint offset = curPos - m_lastPoint;
-        m_lastPoint = curPos;
-        if (!m_alreadySaveRange)
-        {
-            this->saveAxisRange();
-            m_alreadySaveRange = true;
-        }
-        this->chart()->scroll(-offset.x(), offset.y());
     }
 }
 
 void ChartView::mouseReleaseEvent(QMouseEvent *event)
 {
-    m_isPress = false;
-        if (event->button() == Qt::RightButton)
-        {
-            if (m_alreadySaveRange)
-            {
-                this->chart()->axisX()->setRange(m_xMin, m_xMax);
-                this->chart()->axisY()->setRange(m_yMin, m_yMax);
-            }
-        }
+    Q_UNUSED(event);
+    m_bHoldMove = false;
+    QApplication::restoreOverrideCursor();
 }
 
 void ChartView::wheelEvent(QWheelEvent *event)
 {
-    //
+    if(event->delta() > 0)
+    {
+        chart()->zoomIn();
+    }
+
+    else
+    {
+        chart()->zoomOut();
+    }
 }

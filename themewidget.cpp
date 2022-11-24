@@ -38,15 +38,12 @@
 #include <QtCharts/QBarSeries>
 #include <QtCharts/QBarSet>
 #include <QtCharts/QLineSeries>
-#include <QtCharts/QSplineSeries>
-#include <QtCharts/QScatterSeries>
-#include <QtCharts/QAreaSeries>
-#include <QtCharts/QLegend>
 #include <QtWidgets/QGridLayout>
 #include <QtCore/QTime>
 #include <QtCharts/QBarCategoryAxis>
 
 #include <QApplication>
+#include <QScatterSeries>
 
 #include <QDebug>
 
@@ -57,27 +54,26 @@ ThemeWidget::ThemeWidget(QWidget *parent) :
     m_valueCount(20),
     m_dataTable(generateRandomData(m_listCount, m_valueMax, m_valueCount))
 {
-    // create layout
     QGridLayout *baseLayout = new QGridLayout();
 
     m_pLineChart = new QChart();
+    m_vecLineSeries.clear();
 
-    m_pChartView = new QChartView(m_pLineChart);
+    m_pChartView = new ChartView();
+    m_pChartView->setChart(m_pLineChart);
     m_pChartView->setRenderHint(QPainter::Antialiasing);       //抗锯齿
     baseLayout->addWidget(m_pChartView, 0, 0);
+
+
 
     setLayout(baseLayout);
 
     initLineChart();
-    setMouseTracking(true);
-    m_pChartView->setMouseTracking(true);
 }
 
 ThemeWidget::~ThemeWidget()
 {
 }
-
-
 
 DataTable ThemeWidget::generateRandomData(int listCount, int valueMax, int valueCount) const
 {
@@ -103,98 +99,53 @@ DataTable ThemeWidget::generateRandomData(int listCount, int valueMax, int value
 }
 
 
-void ThemeWidget::initLineChart() const
+void ThemeWidget::initLineChart()
 {    
     m_pLineChart->setTitle(u8"折线图");
 
     QString name(u8"商品 ");
     int nameIndex = 0;
-    for (const DataList &list : m_dataTable) {
+    for (const DataList &list : m_dataTable)
+    {
+
+        QScatterSeries *series1 = new QScatterSeries();
+        series1->setMarkerShape(QScatterSeries::MarkerShapeCircle);//圆形的点
+        series1->setBorderColor(QColor(21, 100, 255)); //边框颜色
+        series1->setBrush(QBrush(QColor(21, 100, 255)));//背景颜色
+        series1->setMarkerSize(12);           //点大小
+
         QLineSeries *series = new QLineSeries(m_pLineChart);
+
+        m_pLineChart->addSeries(series1);
+        m_pLineChart->addSeries(series);
+        series1->clear();
+
+
+        m_vecLineSeries.push_back(series);
+
         for (const Data &data : list)
         {
             series->append(data.first);
+            series1->append(data.first.x(),data.first.y());
         }
         series->setName(name + QString::number(nameIndex));
         nameIndex++;
-        m_pLineChart->addSeries(series);
-    }
-    m_pLineChart->createDefaultAxes();
-}
 
-void ThemeWidget::wheelEvent(QWheelEvent *event)
-{
-    if(event->delta() > 0)
+
+    }
+
+    QValueAxis* axisX = new QValueAxis;
+    axisX->setRange(0,10);
+
+    QValueAxis* axisY = new QValueAxis;
+    axisY->setRange(0, 10);
+
+
+    for(QLineSeries* tmpSeries : m_vecLineSeries)
     {
-        m_pLineChart->zoomIn();
+        m_pLineChart->setAxisX(axisX,tmpSeries);
+        m_pLineChart->setAxisY(axisY,tmpSeries);
     }
 
-    else
-    {
-        m_pLineChart->zoomOut();
-    }
+    m_pLineChart->legend()->setAlignment(Qt::AlignBottom);          //设置标题位置
 }
-
-void ThemeWidget::mousePressEvent(QMouseEvent *event)
-{
-    qDebug()<<"mousePressEvent ...";
-    qDebug()<<"event->buttons() = "<<event->buttons();
-    if(event->buttons() == Qt::LeftButton)
-    {
-        m_bHoldMove = true;
-        //记录位置
-        /*QCursor cursor;
-        cursor.setShape(Qt::ClosedHandCursor);
-        QApplication::setOverrideCursor(cursor); */// 使鼠标指针暂时改变形状
-        m_OffsetPoint = event->globalPos()-pos();
-        qDebug()<<"m_OffsetPoint = "<<m_OffsetPoint;
-    }
-}
-
-void ThemeWidget::mouseMoveEvent(QMouseEvent *event)
-{
-    qDebug()<<"mouseMoveEvent .....";
-    qDebug()<<"event->buttons() = "<<event->buttons();
-    if((event->buttons() & Qt::LeftButton )&& m_bHoldMove)
-    {
-        QPoint temp;
-        temp = event->globalPos() - m_OffsetPoint;
-        qDebug()<<"temp = "<<temp;
-        m_pChartView->move(temp);
-    }
-}
-
-void ThemeWidget::mouseReleaseEvent(QMouseEvent *event)
-{
-    qDebug()<<"mouseReleaseEvent .....";
-
-    Q_UNUSED(event);
-    m_bHoldMove = false;
-    QApplication::restoreOverrideCursor();
-}
-
-void ThemeWidget::dragMoveEvent(QDragMoveEvent *event)
-{
-    qDebug()<<"dragMoveEvent .....";
-}
-
-bool ThemeWidget::eventFilter(QObject *obj, QEvent *e)
-{
-    if (obj == m_pChartView)
-    {
-        if (e->type() == QEvent::MouseButtonPress){
-           qDebug()<<"1111......";
-        }
-        else if(e->type() == QEvent::MouseButtonRelease)
-        {
-            qDebug()<<"22222......";
-        }
-        else if(e->type() == QEvent::MouseMove)
-        {
-            qDebug()<<"121212 ....";
-        }
-    }
-    return QWidget::eventFilter(obj,e);
-
-}
-

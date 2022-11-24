@@ -32,16 +32,9 @@
 
 #include <QtWidgets/QWidget>
 #include <QtCharts/QChartGlobal>
+#include <QList>
 
-QT_BEGIN_NAMESPACE
-class QComboBox;
-class QCheckBox;
-QT_END_NAMESPACE
-
-QT_CHARTS_BEGIN_NAMESPACE
-class QChartView;
-class QChart;
-QT_CHARTS_END_NAMESPACE
+#include "ChartView.h"
 
 typedef QPair<QPointF, QString> Data;
 typedef QList<Data> DataList;
@@ -59,16 +52,7 @@ public:
 private:
     DataTable generateRandomData(int listCount, int valueMax, int valueCount) const;
 
-    void initLineChart() const;
-
-protected:
-    void wheelEvent(QWheelEvent *event) override;
-    void mousePressEvent(QMouseEvent* event) override;
-    void mouseMoveEvent(QMouseEvent* event) override;
-    void mouseReleaseEvent(QMouseEvent* event) override;
-    void dragMoveEvent(QDragMoveEvent *event) override;
-
-    bool eventFilter(QObject *obj, QEvent *e);
+    void initLineChart();
 
 private:
     int m_listCount;
@@ -78,12 +62,9 @@ private:
     DataTable m_dataTable;
 
     QChart *m_pLineChart = nullptr;
+    ChartView *m_pChartView = nullptr;
 
-    QPoint m_OffsetPoint;
-
-    QChartView *m_pChartView = nullptr;
-
-    bool m_bHoldMove = false;
+    QVector<QLineSeries*> m_vecLineSeries;
 };
 
 #endif /* THEMEWIDGET_H */

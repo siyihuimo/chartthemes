@@ -1,4 +1,4 @@
-QT += charts
+QT += core gui charts
 
 HEADERS += \
     themewidget.h \
