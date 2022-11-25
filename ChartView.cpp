@@ -22,7 +22,7 @@ void ChartView::mousePressEvent(QMouseEvent *event)
         QCursor cursor;
         cursor.setShape(Qt::ClosedHandCursor);
         QApplication::setOverrideCursor(cursor); // 使鼠标指针暂时改变形状
-        m_OffsetPoint = event->globalPos()-pos();
+        m_OffsetPoint = event->globalPos();
     }
     update();
 }
@@ -32,9 +32,10 @@ void ChartView::mouseMoveEvent(QMouseEvent *event)
     if((event->buttons() & Qt::LeftButton )&& m_bHoldMove)
     {
         QPoint temp;
-        temp = event->globalPos() - m_OffsetPoint;
-        // move(temp);
-
+        QPoint movePoint = event->globalPos();
+        temp = movePoint - m_OffsetPoint;
+        chart()->scroll(-temp.x(),temp.y());
+        m_OffsetPoint = event->globalPos();
     }
 }
 

@@ -32,7 +32,9 @@
 
 #include <QtWidgets/QWidget>
 #include <QtCharts/QChartGlobal>
+#include <QtCharts/QScatterSeries>
 #include <QList>
+#include <QLabel>
 
 #include "ChartView.h"
 
@@ -54,6 +56,10 @@ private:
 
     void initLineChart();
 
+private slots:
+    void showPointHoverd(const QPointF &point, bool state);
+    void setGrideState(bool);
+
 private:
     int m_listCount;
     int m_valueMax;
@@ -64,7 +70,11 @@ private:
     QChart *m_pLineChart = nullptr;
     ChartView *m_pChartView = nullptr;
 
-    QVector<QLineSeries*> m_vecLineSeries;
+    QVector<QXYSeries*> m_vecLineSeries;
+
+    QLabel* m_valueLabel = nullptr;
+
+    const QVector<QScatterSeries::MarkerShape>  m_markerShapeRectangle;
 };
 
 #endif /* THEMEWIDGET_H */
