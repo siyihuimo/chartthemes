@@ -45,13 +45,17 @@
 #include <QApplication>
 #include <QScatterSeries>
 
+#include "SetChartPropertyWidget.h"
+
 #include <QDebug>
+#include <QTabWidget>
 
 ThemeWidget::ThemeWidget(QWidget *parent) :
     QWidget(parent),
-    m_listCount(3),
+    m_listCount(1),
     m_valueMax(10),
     m_valueCount(20),
+    m_markerShapeRectangle{QScatterSeries::MarkerShapeCircle,QScatterSeries::MarkerShapeRectangle},
     m_dataTable(generateRandomData(m_listCount, m_valueMax, m_valueCount))
 {
     QGridLayout *baseLayout = new QGridLayout();
@@ -65,6 +69,12 @@ ThemeWidget::ThemeWidget(QWidget *parent) :
     baseLayout->addWidget(m_pChartView, 0, 0);
 
 
+    SetChartPropertyWidget * tabWidget = new SetChartPropertyWidget();
+    connect(tabWidget,&SetChartPropertyWidget::setGrideStatus,this,&ThemeWidget::setGrideState);
+    //网格是否显示
+  //  tabWidget->resize(30,height());
+
+    baseLayout->addWidget(tabWidget, 0, 1);
 
     setLayout(baseLayout);
 
@@ -103,49 +113,73 @@ void ThemeWidget::initLineChart()
 {    
     m_pLineChart->setTitle(u8"折线图");
 
+
+    m_valueLabel = new QLabel(this);
+    m_valueLabel->setStyleSheet(QString("QLabel{color:#1564FF; font-family:\"Microsoft Yahei\"; font-size:12px; font-weight:bold;"
+                                        " background-color:rgba(21, 100, 255, 51); border-radius:4px; text-align:center;}"));
+    m_valueLabel->setFixedSize(44, 24);
+    m_valueLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
+    m_valueLabel->hide();
+
     QString name(u8"商品 ");
     int nameIndex = 0;
     for (const DataList &list : m_dataTable)
     {
+        QScatterSeries *series1 = new QScatterSeries(m_pLineChart);             //散点
+        connect(series1, &QScatterSeries::hovered, this, &ThemeWidget::showPointHoverd);
+        series1->setMarkerShape(m_markerShapeRectangle.at(nameIndex%2));
+        series1->setMarkerSize(12);
 
-        QScatterSeries *series1 = new QScatterSeries();
-        series1->setMarkerShape(QScatterSeries::MarkerShapeCircle);//圆形的点
-        series1->setBorderColor(QColor(21, 100, 255)); //边框颜色
-        series1->setBrush(QBrush(QColor(21, 100, 255)));//背景颜色
-        series1->setMarkerSize(12);           //点大小
-
-        QLineSeries *series = new QLineSeries(m_pLineChart);
+        QLineSeries *series = new QLineSeries(m_pLineChart);                //折线
 
         m_pLineChart->addSeries(series1);
         m_pLineChart->addSeries(series);
-        series1->clear();
-
 
         m_vecLineSeries.push_back(series);
+        m_vecLineSeries.push_back(series1);
 
         for (const Data &data : list)
         {
             series->append(data.first);
-            series1->append(data.first.x(),data.first.y());
+            series1->append(data.first);
         }
         series->setName(name + QString::number(nameIndex));
         nameIndex++;
-
-
     }
 
     QValueAxis* axisX = new QValueAxis;
     axisX->setRange(0,10);
 
     QValueAxis* axisY = new QValueAxis;
-    axisY->setRange(0, 10);
+    axisY->setRange(0, 5);
 
 
-    for(QLineSeries* tmpSeries : m_vecLineSeries)
+    for(QXYSeries* tmpSeries : m_vecLineSeries)
     {
         m_pLineChart->setAxisX(axisX,tmpSeries);
         m_pLineChart->setAxisY(axisY,tmpSeries);
     }
 
     m_pLineChart->legend()->setAlignment(Qt::AlignBottom);          //设置标题位置
+}
+
+void ThemeWidget::showPointHoverd(const QPointF &point, bool state)
+{
+    if (state) {
+       m_valueLabel->setText(QString::asprintf("%1.0f%", point.y()));
+
+       QPoint curPos = mapFromGlobal(QCursor::pos());
+       m_valueLabel->move(curPos.x() - m_valueLabel->width() / 2, curPos.y() - m_valueLabel->height() * 1.5);//移动数值
+
+      // m_valueLabel->show();//显示出来
+     }
+     else
+        m_valueLabel->hide();//进行隐藏
+}
+
+void ThemeWidget::setGrideState(bool state)
+{
+    qDebug()<<"666666....."<<state;
+    m_pLineChart->axisX()->setGridLineVisible(state);
+    m_pLineChart->axisY()->setGridLineVisible(state);
 }
