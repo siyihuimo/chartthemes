@@ -131,25 +131,29 @@ void ThemeWidget::initLineChart()
     int nameIndex = 0;
     for (const DataList &list : m_dataTable)
     {
-        QScatterSeries *series1 = new QScatterSeries(m_pLineChart);             //散点
-        connect(series1, &QScatterSeries::hovered, this, &ThemeWidget::showPointHoverd);
-        series1->setMarkerShape(m_markerShapeRectangle.at(nameIndex%2));
-        series1->setMarkerSize(12);
+//        QScatterSeries *series1 = new QScatterSeries(m_pLineChart);             //散点
+//        connect(series1, &QScatterSeries::hovered, this, &ThemeWidget::showPointHoverd);
+//        series1->setMarkerShape(m_markerShapeRectangle.at(nameIndex%2));
+//        series1->setMarkerSize(12);
 
         QLineSeries *series = new QLineSeries(m_pLineChart);                //折线
 
-        m_pLineChart->addSeries(series1);
+       // m_pLineChart->addSeries(series1);
         m_pLineChart->addSeries(series);
 
         m_vecLineSeries.push_back(series);
-        m_vecLineSeries.push_back(series1);
+       // m_vecLineSeries.push_back(series1);
 
         for (const Data &data : list)
         {
             series->append(data.first);
-            series1->append(data.first);
+           // series1->append(data.first);
         }
         series->setName(name + QString::number(nameIndex));
+        series->setPointsVisible(true);         //显示点图
+        series->setPointLabelsFormat("(@xPoint,@yPoint)");
+        series->setPointLabelsVisible();                    //显示点迹值
+
         nameIndex++;
     }
 

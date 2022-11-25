@@ -12,7 +12,7 @@
 #include <QDebug>
 
 SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent)
-{
+{    
     QTableWidget *pTabWidget = new QTableWidget(this);
     QVBoxLayout *verticalLayout = new QVBoxLayout(this);
     verticalLayout->addWidget(pTabWidget);
@@ -75,6 +75,8 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     tabLayout->addWidget(unitPropertyGroup);
     tabLayout->addWidget(fontPropertyGroup);
     tabLayout->addSpacerItem(spacerItem);
+
+    setMaximumWidth(240);
 }
 
 void SetChartPropertyWidget::setDefaultFontFamily(QString font)
