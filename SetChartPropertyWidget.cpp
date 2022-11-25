@@ -9,6 +9,7 @@
 #include <QComboBox>
 #include <QCheckBox>
 #include <QSpacerItem>
+#include <QDebug>
 
 SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent)
 {
@@ -41,19 +42,26 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
 
     QHBoxLayout *fontLayout = new QHBoxLayout(fontPropertyGroup);
     QLabel *fontLabel = new QLabel(u8"font: ",fontPropertyGroup);
-    QComboBox *fontComboBox = new QComboBox(fontPropertyGroup);
+    m_pfontComboBox = new QComboBox(fontPropertyGroup);
+    m_pfontComboBox->addItem("NSimSun");
+    m_pfontComboBox->addItem("FangSong");
+    m_pfontComboBox->addItem("SimSun");
+    connect(m_pfontComboBox,static_cast<void(QComboBox::*)(int)>(&QComboBox::currentIndexChanged),[=](int index){emit setFontFamily(m_pfontComboBox->itemText(index));});
     fontLayout->addWidget(fontLabel);
-    fontLayout->addWidget(fontComboBox);
+    fontLayout->addWidget(m_pfontComboBox);
 
     QHBoxLayout *fontSizeLayout = new QHBoxLayout(fontPropertyGroup);
     QLabel *fontSizeLabel = new QLabel(u8"font size: ",fontPropertyGroup);
-    QDoubleSpinBox *fontSizeSpinBox = new QDoubleSpinBox(fontPropertyGroup);
+    m_pfontSizeSpinBox = new QSpinBox(fontPropertyGroup);
+    connect(m_pfontSizeSpinBox,static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),[=](int value){emit setFontSize(value);});
     fontSizeLayout->addWidget(fontSizeLabel);
-    fontSizeLayout->addWidget(fontSizeSpinBox);
+    fontSizeLayout->addWidget(m_pfontSizeSpinBox);
 
     QHBoxLayout *fontStyleLayout = new QHBoxLayout(fontPropertyGroup);
     QCheckBox *fontItalicsCheck = new QCheckBox(u8"italics",fontPropertyGroup);
+    connect(fontItalicsCheck,&QCheckBox::stateChanged,[=](int state){emit setFontItalics(state);});
     QCheckBox *fontBoldCheck = new QCheckBox(u8"bold",fontPropertyGroup);
+    connect(fontBoldCheck,&QCheckBox::stateChanged,[=](int state){emit setFontBold(state);});
     fontStyleLayout->addWidget(fontItalicsCheck);
     fontStyleLayout->addWidget(fontBoldCheck);
 
@@ -67,4 +75,14 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     tabLayout->addWidget(unitPropertyGroup);
     tabLayout->addWidget(fontPropertyGroup);
     tabLayout->addSpacerItem(spacerItem);
+}
+
+void SetChartPropertyWidget::setDefaultFontFamily(QString font)
+{
+    m_pfontComboBox->setCurrentText(font);
+}
+
+void SetChartPropertyWidget::setDefaultFontSize(int size)
+{
+    m_pfontSizeSpinBox->setValue(size);
 }

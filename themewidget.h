@@ -59,6 +59,10 @@ private:
 private slots:
     void showPointHoverd(const QPointF &point, bool state);
     void setGrideState(bool);
+    void setFontFamily(QString);
+    void setFontSize(int);
+    void setItalicsFont(int);
+    void setBoldFont(int);
 
 private:
     int m_listCount;

@@ -70,9 +70,15 @@ ThemeWidget::ThemeWidget(QWidget *parent) :
 
 
     SetChartPropertyWidget * tabWidget = new SetChartPropertyWidget();
+    tabWidget->setDefaultFontFamily(m_pLineChart->legend()->font().family());
+    tabWidget->setDefaultFontSize(m_pLineChart->legend()->font().pointSizeF());
+
     connect(tabWidget,&SetChartPropertyWidget::setGrideStatus,this,&ThemeWidget::setGrideState);
-    //网格是否显示
-  //  tabWidget->resize(30,height());
+
+    connect(tabWidget,&SetChartPropertyWidget::setFontFamily,this,&ThemeWidget::setFontFamily);
+    connect(tabWidget,&SetChartPropertyWidget::setFontSize,this,&ThemeWidget::setFontSize);
+    connect(tabWidget,&SetChartPropertyWidget::setFontItalics,this,&ThemeWidget::setItalicsFont);
+    connect(tabWidget,&SetChartPropertyWidget::setFontBold,this,&ThemeWidget::setBoldFont);
 
     baseLayout->addWidget(tabWidget, 0, 1);
 
@@ -148,6 +154,7 @@ void ThemeWidget::initLineChart()
     }
 
     QValueAxis* axisX = new QValueAxis;
+    axisX->setMinorTickCount(9);        //设置刻度数目
     axisX->setRange(0,10);
 
     QValueAxis* axisY = new QValueAxis;
@@ -179,7 +186,49 @@ void ThemeWidget::showPointHoverd(const QPointF &point, bool state)
 
 void ThemeWidget::setGrideState(bool state)
 {
-    qDebug()<<"666666....."<<state;
     m_pLineChart->axisX()->setGridLineVisible(state);
     m_pLineChart->axisY()->setGridLineVisible(state);
+}
+
+void ThemeWidget::setFontFamily(QString fontStr)
+{
+    QFont font = m_pLineChart->legend()->font();
+    font.setFamily(fontStr);
+    m_pLineChart->legend()->setFont(font);
+}
+
+void ThemeWidget::setFontSize(int size)
+{
+    QFont font = m_pLineChart->legend()->font();
+    font.setPointSizeF(size);
+    m_pLineChart->legend()->setFont(font);
+}
+
+void ThemeWidget::setItalicsFont(int state)
+{
+    QFont font = m_pLineChart->legend()->font();
+
+    if(Qt::Unchecked == state)
+    {
+        font.setItalic(false);
+    }
+    else if(Qt::Checked == state)
+    {
+        font.setItalic(true);
+    }
+    m_pLineChart->legend()->setFont(font);
+}
+
+void ThemeWidget::setBoldFont(int state)
+{
+    QFont font = m_pLineChart->legend()->font();
+    if(Qt::Unchecked == state)
+    {
+        font.setBold(false);
+    }
+    else if(Qt::Checked == state)
+    {
+        font.setBold(true);
+    }
+    m_pLineChart->legend()->setFont(font);
 }
