@@ -1,4 +1,4 @@
-/****************************************************************************
+﻿/****************************************************************************
 **
 ** Copyright (C) 2016 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
@@ -30,6 +30,7 @@
 #include "themewidget.h"
 #include <QtWidgets/QApplication>
 #include <QtWidgets/QMainWindow>
+#include <QDebug>
 
 int main(int argc, char *argv[])
 {

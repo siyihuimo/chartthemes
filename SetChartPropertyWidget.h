@@ -22,6 +22,9 @@ signals:
     void setFontSize(int);
     void setFontItalics(int);
     void setFontBold(int);
+    void setLineColor(QColor);
+    void setXMinorTickCount(int);
+    void setYMinorTickCount(int);
 
 public slots:
 

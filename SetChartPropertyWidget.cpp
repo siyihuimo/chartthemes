@@ -10,6 +10,8 @@
 #include <QCheckBox>
 #include <QSpacerItem>
 #include <QDebug>
+#include <QPushButton>
+#include <QColorDialog>
 
 SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent)
 {    
@@ -31,11 +33,28 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     yesRadioBtn->setChecked(true);
 
     QGroupBox *unitPropertyGroup = new QGroupBox(u8"Unit Length",this);
-    QHBoxLayout *unitHLayout = new QHBoxLayout(unitPropertyGroup);
-    QLabel *unitLabel = new QLabel(u8"unit setting: ",unitPropertyGroup);
-    QDoubleSpinBox *unitSpinbox = new QDoubleSpinBox(unitPropertyGroup);
-    unitHLayout->addWidget(unitLabel);
-    unitHLayout->addWidget(unitSpinbox);
+    QVBoxLayout *unitVeritalLayout = new QVBoxLayout(unitPropertyGroup);
+
+    QHBoxLayout *unitXHLayout = new QHBoxLayout(unitPropertyGroup);
+    QLabel *unitXLabel = new QLabel(u8"x axis unit setting: ",unitPropertyGroup);
+    QSpinBox *unitXSpinbox = new QSpinBox(unitPropertyGroup);
+    unitXSpinbox->setValue(5);
+    connect(unitXSpinbox,static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),[=](int value){
+        emit setXMinorTickCount(value);});
+    unitXHLayout->addWidget(unitXLabel);
+    unitXHLayout->addWidget(unitXSpinbox);
+
+    QHBoxLayout *unitYHLayout = new QHBoxLayout(unitPropertyGroup);
+    QLabel *unitYLabel = new QLabel(u8"y axis unit setting: ",unitPropertyGroup);
+    QSpinBox *unitYSpinbox = new QSpinBox(unitPropertyGroup);
+    unitYSpinbox->setValue(5);
+    connect(unitYSpinbox,static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),[=](int value){
+        emit setYMinorTickCount(value);});
+    unitYHLayout->addWidget(unitYLabel);
+    unitYHLayout->addWidget(unitYSpinbox);
+
+    unitVeritalLayout->addLayout(unitXHLayout);
+    unitVeritalLayout->addLayout(unitYHLayout);
 
     QGroupBox *fontPropertyGroup = new QGroupBox(u8"Font Setting",this);
     QVBoxLayout *fontVerticalLayout = new QVBoxLayout(fontPropertyGroup);
@@ -65,6 +84,23 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     fontStyleLayout->addWidget(fontItalicsCheck);
     fontStyleLayout->addWidget(fontBoldCheck);
 
+    QHBoxLayout *lineStyleLayout = new QHBoxLayout(this);
+    QLabel *lineColorSettingLabel = new QLabel(u8"line color: ",this);
+    QPushButton *lineColorBtn = new QPushButton(u8"",this);
+    lineColorBtn->setStyleSheet("QPushButton{background-color:rgb(255,255,0)};");
+    connect(lineColorBtn, &QPushButton::clicked,[=]{
+        QColor color = QColorDialog::getColor(QColor(255,0,0));
+        QString tmpColor = QString("QPushButton{background-color:rgb(%1,%2,%3)};").arg(color.red()).arg(color.green()).arg(color.blue());
+        lineColorBtn->setStyleSheet(tmpColor);
+        emit setLineColor(color);});
+
+
+
+    lineStyleLayout->addWidget(lineColorSettingLabel);
+    lineStyleLayout->addWidget(lineColorBtn);
+
+
+
     QSpacerItem *spacerItem = new QSpacerItem(0,160,QSizePolicy::Expanding,QSizePolicy::Fixed);
 
     fontVerticalLayout->addLayout(fontLayout);
@@ -75,6 +111,7 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     tabLayout->addWidget(unitPropertyGroup);
     tabLayout->addWidget(fontPropertyGroup);
     tabLayout->addSpacerItem(spacerItem);
+    tabLayout->addLayout(lineStyleLayout);
 
     setMaximumWidth(240);
 }

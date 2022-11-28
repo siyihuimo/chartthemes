@@ -63,6 +63,7 @@ private slots:
     void setFontSize(int);
     void setItalicsFont(int);
     void setBoldFont(int);
+    void setCustomColor(QColor);
 
 private:
     int m_listCount;
@@ -79,6 +80,8 @@ private:
     QLabel* m_valueLabel = nullptr;
 
     const QVector<QScatterSeries::MarkerShape>  m_markerShapeRectangle;
+
+    QXYSeries* m_pCurrentSeries = nullptr;
 };
 
 #endif /* THEMEWIDGET_H */

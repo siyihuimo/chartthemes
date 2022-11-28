@@ -49,10 +49,11 @@
 
 #include <QDebug>
 #include <QTabWidget>
+#include <QColorDialog>
 
 ThemeWidget::ThemeWidget(QWidget *parent) :
     QWidget(parent),
-    m_listCount(1),
+    m_listCount(3),
     m_valueMax(10),
     m_valueCount(20),
     m_markerShapeRectangle{QScatterSeries::MarkerShapeCircle,QScatterSeries::MarkerShapeRectangle},
@@ -79,6 +80,24 @@ ThemeWidget::ThemeWidget(QWidget *parent) :
     connect(tabWidget,&SetChartPropertyWidget::setFontSize,this,&ThemeWidget::setFontSize);
     connect(tabWidget,&SetChartPropertyWidget::setFontItalics,this,&ThemeWidget::setItalicsFont);
     connect(tabWidget,&SetChartPropertyWidget::setFontBold,this,&ThemeWidget::setBoldFont);
+    connect(tabWidget,&SetChartPropertyWidget::setLineColor,this,&ThemeWidget::setCustomColor);
+    connect(tabWidget,&SetChartPropertyWidget::setXMinorTickCount,[=](int value){
+        if(m_pLineChart)
+        {
+            QValueAxis *tmpXisX = qobject_cast<QValueAxis*>(m_pLineChart->axisX());
+            if(tmpXisX)
+                   tmpXisX ->setMinorTickCount(value);
+        }
+    });
+
+    connect(tabWidget,&SetChartPropertyWidget::setYMinorTickCount,[=](int value){
+        if(m_pLineChart)
+        {
+            QValueAxis *tmpXisY = qobject_cast<QValueAxis*>(m_pLineChart->axisY());
+            if(tmpXisY)
+                tmpXisY->setMinorTickCount(value);
+        }
+    });
 
     baseLayout->addWidget(tabWidget, 0, 1);
 
@@ -137,31 +156,69 @@ void ThemeWidget::initLineChart()
 //        series1->setMarkerSize(12);
 
         QLineSeries *series = new QLineSeries(m_pLineChart);                //折线
+        series->setObjectName(QString::number(nameIndex));
 
-       // m_pLineChart->addSeries(series1);
+      //  qDebug()<<"color .... = "<< series->color();
+
+        connect(series,&QXYSeries::clicked,[=](const QPointF &point){
+            Q_UNUSED(point) ;
+
+            //便利上一次的折线，将点图隐藏
+            for(QXYSeries* tmpSeries : m_vecLineSeries)
+            {
+                const QPen oldPen = tmpSeries->pen();
+                QPen pen(oldPen);
+                pen.setWidth(2);
+                tmpSeries->setPointsVisible(false);         //显示点图
+                tmpSeries->setPen(pen);
+                tmpSeries->setPointLabelsVisible(false);
+            }
+
+            m_pCurrentSeries = series;
+            if(m_pCurrentSeries)
+            {
+                const QPen oldPen = m_pCurrentSeries->pen();
+                QPen pen(oldPen);
+                pen.setWidth(3);
+                m_pCurrentSeries->setPointsVisible(true);         //显示点图
+                m_pCurrentSeries->setPen(pen);
+
+                m_pCurrentSeries->setPointLabelsFormat("(@xPoint,@yPoint)");
+                m_pCurrentSeries->setPointLabelsVisible(true);
+
+//                int lineWidth = oldPen.width();
+//                qDebug()<<"lineWidth = "<<lineWidth;
+//                m_pCurrentSeries->setMarkerSize(20);
+
+//                m_pCurrentSeries->chart()->setAnimationOptions(QChart::SeriesAnimations);
+            }
+        });
+
+//        m_pLineChart->addSeries(series1);
         m_pLineChart->addSeries(series);
+//        series1->setColor(series->color());
 
         m_vecLineSeries.push_back(series);
-       // m_vecLineSeries.push_back(series1);
+//        m_vecLineSeries.push_back(series1);
 
         for (const Data &data : list)
         {
             series->append(data.first);
-           // series1->append(data.first);
+//            series1->append(data.first);
         }
         series->setName(name + QString::number(nameIndex));
-        series->setPointsVisible(true);         //显示点图
-        series->setPointLabelsFormat("(@xPoint,@yPoint)");
-        series->setPointLabelsVisible();                    //显示点迹值
-
+//        series->setPointsVisible(true);         //显示点图
+        /*series->setPointLabelsFormat("(@xPoint,@yPoint)");
+        series->setPointLabelsVisible(); */                   //显示点迹值
         nameIndex++;
     }
 
     QValueAxis* axisX = new QValueAxis;
-    axisX->setMinorTickCount(9);        //设置刻度数目
+    axisX->setMinorTickCount(5);        //设置刻度数目
     axisX->setRange(0,10);
 
     QValueAxis* axisY = new QValueAxis;
+    axisY->setMinorTickCount(5);
     axisY->setRange(0, 5);
 
 
@@ -236,3 +293,13 @@ void ThemeWidget::setBoldFont(int state)
     }
     m_pLineChart->legend()->setFont(font);
 }
+
+void ThemeWidget::setCustomColor(QColor color)
+{
+    m_pLineChart->focusProxy();
+    if(m_pCurrentSeries)
+    {
+        m_pCurrentSeries->setColor(color);
+    }
+}
+
