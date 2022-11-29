@@ -24,6 +24,13 @@ protected:
 private:
     QPoint m_OffsetPoint;
     bool m_bHoldMove;
+
+    QGraphicsRectItem* m_pRectItem = nullptr;
+
+    QPoint m_lastPoint;
+    QPoint m_currentPoint;
+    bool b_isRightPress = false;
+    bool b_isLeftPress = false;
 };
 
 #endif // CHARTVIEW_H
