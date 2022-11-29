@@ -25,6 +25,9 @@ signals:
     void setLineColor(QColor);
     void setXMinorTickCount(int);
     void setYMinorTickCount(int);
+    void setDisplayLabelState(int);
+    void setLineWidth(int);
+    void setlegendPosition(QString);
 
 public slots:
 

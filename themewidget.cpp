@@ -41,6 +41,7 @@
 #include <QtWidgets/QGridLayout>
 #include <QtCore/QTime>
 #include <QtCharts/QBarCategoryAxis>
+#include <QCategoryAxis>
 
 #include <QApplication>
 #include <QScatterSeries>
@@ -50,6 +51,7 @@
 #include <QDebug>
 #include <QTabWidget>
 #include <QColorDialog>
+#include <QLegendMarker>
 
 ThemeWidget::ThemeWidget(QWidget *parent) :
     QWidget(parent),
@@ -65,6 +67,7 @@ ThemeWidget::ThemeWidget(QWidget *parent) :
     m_vecLineSeries.clear();
 
     m_pChartView = new ChartView();
+    connect(m_pChartView,&ChartView::mousePressChart,this,&ThemeWidget::recoverLineStatus);
     m_pChartView->setChart(m_pLineChart);
     m_pChartView->setRenderHint(QPainter::Antialiasing);       //抗锯齿
     baseLayout->addWidget(m_pChartView, 0, 0);
@@ -75,29 +78,16 @@ ThemeWidget::ThemeWidget(QWidget *parent) :
     tabWidget->setDefaultFontSize(m_pLineChart->legend()->font().pointSizeF());
 
     connect(tabWidget,&SetChartPropertyWidget::setGrideStatus,this,&ThemeWidget::setGrideState);
-
     connect(tabWidget,&SetChartPropertyWidget::setFontFamily,this,&ThemeWidget::setFontFamily);
     connect(tabWidget,&SetChartPropertyWidget::setFontSize,this,&ThemeWidget::setFontSize);
     connect(tabWidget,&SetChartPropertyWidget::setFontItalics,this,&ThemeWidget::setItalicsFont);
     connect(tabWidget,&SetChartPropertyWidget::setFontBold,this,&ThemeWidget::setBoldFont);
     connect(tabWidget,&SetChartPropertyWidget::setLineColor,this,&ThemeWidget::setCustomColor);
-    connect(tabWidget,&SetChartPropertyWidget::setXMinorTickCount,[=](int value){
-        if(m_pLineChart)
-        {
-            QValueAxis *tmpXisX = qobject_cast<QValueAxis*>(m_pLineChart->axisX());
-            if(tmpXisX)
-                   tmpXisX ->setMinorTickCount(value);
-        }
-    });
-
-    connect(tabWidget,&SetChartPropertyWidget::setYMinorTickCount,[=](int value){
-        if(m_pLineChart)
-        {
-            QValueAxis *tmpXisY = qobject_cast<QValueAxis*>(m_pLineChart->axisY());
-            if(tmpXisY)
-                tmpXisY->setMinorTickCount(value);
-        }
-    });
+    connect(tabWidget,&SetChartPropertyWidget::setXMinorTickCount,this,&ThemeWidget::setXAxisaTickCount);
+    connect(tabWidget,&SetChartPropertyWidget::setYMinorTickCount,this,&ThemeWidget::setYAxisaTickCount);
+    connect(tabWidget,&SetChartPropertyWidget::setDisplayLabelState,this,&ThemeWidget::setLabelDisplayState);
+    connect(tabWidget,&SetChartPropertyWidget::setLineWidth,this,&ThemeWidget::setCurrentLineWidth);
+    connect(tabWidget,&SetChartPropertyWidget::setlegendPosition,this,&ThemeWidget::changeLegendPosition);
 
     baseLayout->addWidget(tabWidget, 0, 1);
 
@@ -146,80 +136,96 @@ void ThemeWidget::initLineChart()
     m_valueLabel->setAlignment(Qt::AlignHCenter | Qt::AlignVCenter);
     m_valueLabel->hide();
 
-    QString name(u8"商品 ");
+    QString name(u8"point track ");
     int nameIndex = 0;
     for (const DataList &list : m_dataTable)
     {
-//        QScatterSeries *series1 = new QScatterSeries(m_pLineChart);             //散点
-//        connect(series1, &QScatterSeries::hovered, this, &ThemeWidget::showPointHoverd);
-//        series1->setMarkerShape(m_markerShapeRectangle.at(nameIndex%2));
-//        series1->setMarkerSize(12);
+        //        QScatterSeries *series1 = new QScatterSeries(m_pLineChart);             //散点
+        //        connect(series1, &QScatterSeries::hovered, this, &ThemeWidget::showPointHoverd);
+        //        series1->setMarkerShape(m_markerShapeRectangle.at(nameIndex%2));
+        //        series1->setMarkerSize(12);
 
         QLineSeries *series = new QLineSeries(m_pLineChart);                //折线
         series->setObjectName(QString::number(nameIndex));
 
-      //  qDebug()<<"color .... = "<< series->color();
-
-        connect(series,&QXYSeries::clicked,[=](const QPointF &point){
-            Q_UNUSED(point) ;
-
-            //便利上一次的折线，将点图隐藏
-            for(QXYSeries* tmpSeries : m_vecLineSeries)
-            {
-                const QPen oldPen = tmpSeries->pen();
-                QPen pen(oldPen);
-                pen.setWidth(2);
-                tmpSeries->setPointsVisible(false);         //显示点图
-                tmpSeries->setPen(pen);
-                tmpSeries->setPointLabelsVisible(false);
-            }
-
+        connect(series,&QXYSeries::clicked,[=](){
             m_pCurrentSeries = series;
-            if(m_pCurrentSeries)
+            setSeriesSelectState(QPointF(0,0));
+            auto itLegend = m_LegendMapSeries.begin();
+            while(itLegend != m_LegendMapSeries.end())
             {
-                const QPen oldPen = m_pCurrentSeries->pen();
-                QPen pen(oldPen);
-                pen.setWidth(3);
-                m_pCurrentSeries->setPointsVisible(true);         //显示点图
-                m_pCurrentSeries->setPen(pen);
-
-                m_pCurrentSeries->setPointLabelsFormat("(@xPoint,@yPoint)");
-                m_pCurrentSeries->setPointLabelsVisible(true);
-
-//                int lineWidth = oldPen.width();
-//                qDebug()<<"lineWidth = "<<lineWidth;
-//                m_pCurrentSeries->setMarkerSize(20);
-
-//                m_pCurrentSeries->chart()->setAnimationOptions(QChart::SeriesAnimations);
+                if(itLegend.value() == series)
+                {
+                    m_pCurrentEditLegend = itLegend.key();
+                    setLegendSelectState();         //关联图例选中状态
+                    break;
+                }
+                ++itLegend;
             }
         });
 
-//        m_pLineChart->addSeries(series1);
+        //        m_pLineChart->addSeries(series1);
         m_pLineChart->addSeries(series);
-//        series1->setColor(series->color());
+        //        series1->setColor(series->color());
 
         m_vecLineSeries.push_back(series);
-//        m_vecLineSeries.push_back(series1);
+        //        m_vecLineSeries.push_back(series1);
 
         for (const Data &data : list)
         {
             series->append(data.first);
-//            series1->append(data.first);
+            //            series1->append(data.first);
         }
         series->setName(name + QString::number(nameIndex));
-//        series->setPointsVisible(true);         //显示点图
-        /*series->setPointLabelsFormat("(@xPoint,@yPoint)");
-        series->setPointLabelsVisible(); */                   //显示点迹值
+
+
+        QLegend *pChartLegend1 = m_pLineChart->legend();
+        if(pChartLegend1)
+        {
+            QList<QLegendMarker *> plegendList = pChartLegend1->markers();
+            for(QLegendMarker *tmpLegend : plegendList)
+            {
+                if(tmpLegend)
+                {
+                    if(tmpLegend->label().contains(series->name()))
+                    {
+                        connect(tmpLegend,&QLegendMarker::clicked,[=](){
+                            m_pCurrentEditLegend = tmpLegend;
+                            setLegendSelectState();
+                        });
+                        m_LegendMapSeries.insert(tmpLegend,series);
+                    }
+                }
+            }
+        }
+
         nameIndex++;
     }
 
-    QValueAxis* axisX = new QValueAxis;
+    QCategoryAxis * axisX = new QCategoryAxis;
     axisX->setMinorTickCount(5);        //设置刻度数目
     axisX->setRange(0,10);
+    axisX->append("no1",1);
+    axisX->append("no2",2);
+    axisX->append("no3",3);
+    axisX->append("no4",4);
+    axisX->append("no5",5);
+    axisX->append("no6",6);
+    axisX->append("no7",7);
+    axisX->append("no8",8);
+    axisX->append("no9",9);
+    axisX->append("no10",10);
+    axisX->setLabelsPosition(QCategoryAxis::AxisLabelsPositionOnValue);
 
-    QValueAxis* axisY = new QValueAxis;
+    QCategoryAxis* axisY = new QCategoryAxis;
     axisY->setMinorTickCount(5);
     axisY->setRange(0, 5);
+    axisY->append("apple",1);
+    axisY->append("banana",2);
+    axisY->append("orange",3);
+    axisY->append("tomato",4);
+    axisY->append("carrot",5);
+    axisY->setLabelsPosition(QCategoryAxis::AxisLabelsPositionOnValue);
 
 
     for(QXYSeries* tmpSeries : m_vecLineSeries)
@@ -228,20 +234,74 @@ void ThemeWidget::initLineChart()
         m_pLineChart->setAxisY(axisY,tmpSeries);
     }
 
-    m_pLineChart->legend()->setAlignment(Qt::AlignBottom);          //设置标题位置
+    QLegend *pChartLegend = m_pLineChart->legend();
+    if(pChartLegend)
+    {
+        pChartLegend->setAlignment(Qt::AlignBottom);          //设置标题位置
+    }
+
+}
+
+
+
+void ThemeWidget::setLegendSelectState()
+{
+    if(m_pCurrentEditLegend)
+    {
+        QFont font = m_pCurrentEditLegend->font();     //默认字体大小为8
+
+        //恢复上一次修改的设置
+        if(m_pLastEditLegend)
+        {
+            font.setPointSizeF(8);
+            font.setBold(false);
+            m_pLastEditLegend->setFont(font);
+        }
+
+        //设置本次选中的状态
+        font.setPointSizeF(16);
+        font.setBold(true);
+        m_pCurrentEditLegend->setFont(font);
+
+        auto itSeries = m_LegendMapSeries.find(m_pCurrentEditLegend);
+        if(itSeries != m_LegendMapSeries.end())
+        {
+            m_pCurrentSeries = itSeries.value();
+            setSeriesSelectState(QPointF(0,0));         //关联折线选中状态
+        }
+        m_pLastEditLegend = m_pCurrentEditLegend;
+    }
+
+}
+
+
+void ThemeWidget::setSeriesSelectState(const QPointF &point)
+{
+    Q_UNUSED(point) ;
+    if(m_pCurrentSeries)
+    {
+        const QPen oldPen = m_pCurrentSeries->pen();
+        QPen pen(oldPen);
+        pen.setWidth(3);
+        pen.setStyle(Qt::DotLine);
+        m_pCurrentSeries->setPointsVisible(true);         //显示点图
+        m_pCurrentSeries->setPen(pen);
+        m_pCurrentSeries->setPointLabelsFormat("(@xPoint,@yPoint)");
+        m_pCurrentSeries->setPointLabelsVisible(m_bShowPointLabel);
+    }
 }
 
 void ThemeWidget::showPointHoverd(const QPointF &point, bool state)
 {
     if (state) {
-       m_valueLabel->setText(QString::asprintf("%1.0f%", point.y()));
+        m_valueLabel->setText(QString::asprintf("%1.0f%", point.y()));
 
-       QPoint curPos = mapFromGlobal(QCursor::pos());
-       m_valueLabel->move(curPos.x() - m_valueLabel->width() / 2, curPos.y() - m_valueLabel->height() * 1.5);//移动数值
+        QPoint curPos = mapFromGlobal(QCursor::pos());
+        m_valueLabel->move(curPos.x() - m_valueLabel->width() / 2, curPos.y() - m_valueLabel->height() * 1.5);//移动数值
 
-      // m_valueLabel->show();//显示出来
-     }
-     else
+        // m_valueLabel->show();//显示出来
+    }
+    else
         m_valueLabel->hide();//进行隐藏
 }
 
@@ -302,4 +362,89 @@ void ThemeWidget::setCustomColor(QColor color)
         m_pCurrentSeries->setColor(color);
     }
 }
+
+void ThemeWidget::setXAxisaTickCount(int value)
+{
+    if(m_pLineChart)
+    {
+        QValueAxis *tmpXisX = qobject_cast<QValueAxis*>(m_pLineChart->axisX());
+        if(tmpXisX)
+            tmpXisX ->setMinorTickCount(value);
+    }
+}
+
+void ThemeWidget::setYAxisaTickCount(int value)
+{
+    if(m_pLineChart)
+    {
+        QValueAxis *tmpXisY = qobject_cast<QValueAxis*>(m_pLineChart->axisY());
+        if(tmpXisY)
+            tmpXisY->setMinorTickCount(value);
+    }
+}
+
+void ThemeWidget::setLabelDisplayState(int value)
+{
+    if(m_pCurrentSeries)
+    {
+        if(Qt::Unchecked == value)
+        {
+            m_bShowPointLabel = false;
+        }
+        else if(Qt::Checked == value)
+        {
+            m_bShowPointLabel = true;
+        }
+        m_pCurrentSeries->setPointLabelsVisible(m_bShowPointLabel);
+    }
+}
+
+void ThemeWidget::setCurrentLineWidth(int lineWidth)
+{
+    if(m_pCurrentSeries)
+    {
+        const QPen oldPen = m_pCurrentSeries->pen();
+        QPen pen(oldPen);
+        pen.setWidth(lineWidth);
+        m_pCurrentSeries->setPen(pen);
+    }
+}
+
+void ThemeWidget::changeLegendPosition(QString strPos)
+{
+    if(m_pLineChart)
+    {
+        if("top" == strPos)
+        {
+            m_pLineChart->legend()->setAlignment(Qt::AlignTop);
+        }
+        else if("bottom" == strPos)
+        {
+            m_pLineChart->legend()->setAlignment(Qt::AlignBottom);
+        }
+        else if("left" == strPos)
+        {
+            m_pLineChart->legend()->setAlignment(Qt::AlignLeft);
+        }
+        else if("right" == strPos)
+        {
+            m_pLineChart->legend()->setAlignment(Qt::AlignRight);
+        }
+    }
+}
+
+void ThemeWidget::recoverLineStatus()
+{
+    for(QXYSeries* tmpSeries : m_vecLineSeries)
+    {
+        const QPen oldPen = tmpSeries->pen();
+        QPen pen(oldPen);
+        pen.setWidth(2);
+        pen.setStyle(Qt::SolidLine);
+        tmpSeries->setPointsVisible(false);         //显示点图
+        tmpSeries->setPen(pen);
+        tmpSeries->setPointLabelsVisible(false);
+    }
+}
+
 

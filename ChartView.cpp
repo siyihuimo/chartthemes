@@ -15,6 +15,8 @@ ChartView::~ChartView()
 
 void ChartView::mousePressEvent(QMouseEvent *event)
 {
+    //鼠标点击空白处，取消线条选中状态
+    emit mousePressChart();
 
     if(event->buttons() == Qt::LeftButton)
     {

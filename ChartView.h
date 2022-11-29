@@ -15,6 +15,10 @@ class ChartView : public QChartView
 public:
     ChartView(QWidget *parent = nullptr);
     ~ChartView();
+
+signals:
+    void mousePressChart();
+
 protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;

@@ -84,20 +84,47 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     fontStyleLayout->addWidget(fontItalicsCheck);
     fontStyleLayout->addWidget(fontBoldCheck);
 
-    QHBoxLayout *lineStyleLayout = new QHBoxLayout(this);
-    QLabel *lineColorSettingLabel = new QLabel(u8"line color: ",this);
-    QPushButton *lineColorBtn = new QPushButton(u8"",this);
+
+    QGroupBox* linePropertyGroup = new QGroupBox(this);
+
+    QVBoxLayout *linePropertyLayout = new QVBoxLayout(linePropertyGroup);
+    QHBoxLayout *lineColorLayout = new QHBoxLayout(linePropertyGroup);
+    QLabel *lineColorSettingLabel = new QLabel(u8"line color: ",linePropertyGroup);
+    QPushButton *lineColorBtn = new QPushButton(u8"",linePropertyGroup);
     lineColorBtn->setStyleSheet("QPushButton{background-color:rgb(255,255,0)};");
     connect(lineColorBtn, &QPushButton::clicked,[=]{
         QColor color = QColorDialog::getColor(QColor(255,0,0));
         QString tmpColor = QString("QPushButton{background-color:rgb(%1,%2,%3)};").arg(color.red()).arg(color.green()).arg(color.blue());
         lineColorBtn->setStyleSheet(tmpColor);
         emit setLineColor(color);});
+    lineColorLayout->addWidget(lineColorSettingLabel);
+    lineColorLayout->addWidget(lineColorBtn);
+
+    QHBoxLayout *lineWidthLayout = new QHBoxLayout(linePropertyGroup);
+    QLabel *lineWidthLabel = new QLabel(u8"line width: ",linePropertyGroup);
+    QSpinBox *lineWidthSpinBox = new QSpinBox(linePropertyGroup);
+    connect(lineWidthSpinBox, static_cast<void(QSpinBox::*)(int)>(&QSpinBox::valueChanged),[=](int value){emit setLineWidth(value);});
+
+    lineWidthLayout->addWidget(lineWidthLabel);
+    lineWidthLayout->addWidget(lineWidthSpinBox);
+    QCheckBox *lineDisplayLabelCheck = new QCheckBox(u8"display label",fontPropertyGroup);
+    lineDisplayLabelCheck->setChecked(false);
+    connect(lineDisplayLabelCheck,&QCheckBox::stateChanged,[=](int state){emit setDisplayLabelState(state);});
+    linePropertyLayout->addLayout(lineColorLayout);
+    linePropertyLayout->addLayout(lineWidthLayout);
+    linePropertyLayout->addWidget(lineDisplayLabelCheck);
 
 
-
-    lineStyleLayout->addWidget(lineColorSettingLabel);
-    lineStyleLayout->addWidget(lineColorBtn);
+    QHBoxLayout *legendLayout = new QHBoxLayout(this);
+    QLabel *legendLabel = new QLabel(u8"legend position: ",this);
+    QComboBox *legendPosBox = new QComboBox(this);
+    connect(legendPosBox,&QComboBox::currentTextChanged,[=](const QString &text){emit setlegendPosition(text);});
+    QStringList legendPositionlist;
+    legendPositionlist<<u8"top"<<u8"bottom"<<u8"left"<<u8"right";
+    legendPosBox->addItems(legendPositionlist);
+    legendPosBox->setCurrentText(u8"bottom");
+    legendLayout->addWidget(legendLabel);
+    legendLayout->addWidget(legendPosBox);
 
 
 
@@ -110,8 +137,10 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     tabLayout->addWidget(gridPropertyGroup);
     tabLayout->addWidget(unitPropertyGroup);
     tabLayout->addWidget(fontPropertyGroup);
+    tabLayout->addWidget(linePropertyGroup);
+    tabLayout->addLayout(legendLayout);
     tabLayout->addSpacerItem(spacerItem);
-    tabLayout->addLayout(lineStyleLayout);
+
 
     setMaximumWidth(240);
 }

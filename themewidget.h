@@ -65,6 +65,16 @@ private slots:
     void setBoldFont(int);
     void setCustomColor(QColor);
 
+    void setXAxisaTickCount(int value);
+    void setYAxisaTickCount(int value);
+    void setLabelDisplayState(int);
+    void setCurrentLineWidth(int);
+    void changeLegendPosition(QString);
+
+    void recoverLineStatus();
+    void setSeriesSelectState(const QPointF &point);
+    void setLegendSelectState();
+
 private:
     int m_listCount;
     int m_valueMax;
@@ -82,6 +92,11 @@ private:
     const QVector<QScatterSeries::MarkerShape>  m_markerShapeRectangle;
 
     QXYSeries* m_pCurrentSeries = nullptr;
+    bool m_bShowPointLabel = false;
+
+    QMap<QLegendMarker*,QXYSeries*> m_LegendMapSeries;
+    QLegendMarker* m_pLastEditLegend=nullptr;
+    QLegendMarker* m_pCurrentEditLegend = nullptr;
 };
 
 #endif /* THEMEWIDGET_H */
