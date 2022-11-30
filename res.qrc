@@ -1,6 +1,9 @@
 <RCC>
     <qresource prefix="/img">
-        <file>shape2.png</file>
-        <file>shape1.png</file>
+        <file>res/1.svg</file>
+        <file>res/2.svg</file>
+        <file>res/3.svg</file>
+        <file>res/shape1.png</file>
+        <file>res/shape2.png</file>
     </qresource>
 </RCC>

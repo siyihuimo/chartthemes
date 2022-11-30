@@ -31,6 +31,7 @@ signals:
     void legendTextChange(QString);
     void setSeriesTransparent(int);
     void setLegendHideState(int);
+    void setScatterIcon(QString);
 
 public slots:
 

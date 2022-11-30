@@ -91,6 +91,7 @@ ThemeWidget::ThemeWidget(QWidget *parent) :
     connect(tabWidget,&SetChartPropertyWidget::legendTextChange,this,&ThemeWidget::setLegendTitle);
     connect(tabWidget,&SetChartPropertyWidget::setSeriesTransparent,this,&ThemeWidget::serCurrentSeriesTrans);
     connect(tabWidget,&SetChartPropertyWidget::setLegendHideState,this,&ThemeWidget::setCurrentLegendHideState);
+    connect(tabWidget,&SetChartPropertyWidget::setScatterIcon,this,&ThemeWidget::setCurrentScatterIcon);
 
     connect(this,&ThemeWidget::seriesClick,tabWidget,&SetChartPropertyWidget::setLengendTitle);
     connect(this,&ThemeWidget::currentSeriesTrans,tabWidget,&SetChartPropertyWidget::setTransparent);
@@ -147,23 +148,10 @@ void ThemeWidget::initLineChart()
     for (const DataList &list : m_dataTable)
     {
         QScatterSeries *series1 = new QScatterSeries(m_pLineChart);             //散点
+        connect(series1,&QScatterSeries::doubleClicked,[=](){qDebug()<<"double11111";});
         series1->setMarkerShape(m_markerShapeRectangle.at(nameIndex%2));
         int customIcoSize =10;
         series1->setMarkerSize(customIcoSize);
-
-        QImage customIco(customIcoSize, customIcoSize, QImage::Format_ARGB32);
-        customIco.fill(Qt::transparent);
-
-        QPixmap tmpPix = QPixmap(":/img/shape2.png");
-        tmpPix = tmpPix.scaled(customIcoSize,customIcoSize);
-        QPainter painter(&customIco);
-        painter.setRenderHint(QPainter::Antialiasing);
-        painter.setPen(QRgb(0xf6a625));
-        painter.setBrush(painter.pen().color());
-        painter.drawPixmap(0,0,tmpPix);
-        series1->setBrush(customIco);
-        series1->setPen(QColor(Qt::transparent));
-
         QLineSeries *series = new QLineSeries(m_pLineChart);                //折线
         series->setObjectName(QString::number(nameIndex));
 
@@ -243,6 +231,7 @@ void ThemeWidget::initLineChart()
     axisX->append("no9",9);
     axisX->append("no10",10);
     axisX->setLabelsPosition(QCategoryAxis::AxisLabelsPositionOnValue);
+    axisX->setTitleText(u8"no");
 
     QCategoryAxis* axisY = new QCategoryAxis;
     axisY->setMinorTickCount(5);
@@ -253,7 +242,14 @@ void ThemeWidget::initLineChart()
     axisY->append("tomato",4);
     axisY->append("carrot",5);
     axisY->setLabelsPosition(QCategoryAxis::AxisLabelsPositionOnValue);
+    axisY->setTitleText(u8"fruit");
 
+
+    QLegend *pChartLegend = m_pLineChart->legend();
+    if(pChartLegend)
+    {
+        pChartLegend->setAlignment(Qt::AlignBottom);          //设置标题位置
+    }
 
     for(QXYSeries* tmpSeries : m_vecLineSeries)
     {
@@ -261,11 +257,7 @@ void ThemeWidget::initLineChart()
         m_pLineChart->setAxisY(axisY,tmpSeries);
     }
 
-    QLegend *pChartLegend = m_pLineChart->legend();
-    if(pChartLegend)
-    {
-        pChartLegend->setAlignment(Qt::AlignBottom);          //设置标题位置
-    }
+
 
 }
 
@@ -328,17 +320,59 @@ void ThemeWidget::serCurrentSeriesTrans(int transparent)
 
 void ThemeWidget::setCurrentLegendHideState(int state)
 {
-    if(m_pCurrentEditLegend)
+    if(m_pLineChart && m_pLineChart->legend())
     {
-        if(Qt::Unchecked == state)
-        {
-            m_pCurrentEditLegend->setVisible(true);
+        bool hideLegend = false;
+        switch (state) {
+        case Qt::Unchecked:
+            hideLegend = true;
+            break;
+        case Qt::Checked:
+            hideLegend = false;
+            break;
+        default:
+            break;
         }
-        else if(Qt::Checked == state)
+        m_pLineChart->legend()->setVisible(hideLegend);
+    }
+}
+
+void ThemeWidget::setCurrentScatterIcon(QString iconTag)
+{
+    qDebug()<<"iconTag = "<<iconTag;
+
+    if(m_pCurrentSeries)
+    {
+        auto iterator = m_LineMapScatter.find(m_pCurrentSeries);
+        if(iterator != m_LineMapScatter.end())
         {
-            m_pCurrentEditLegend->setVisible(false);
+            int customIcoSize = 10;
+            m_pCurrentSeries->setPointsVisible(false);
+            QImage customIco(customIcoSize, customIcoSize, QImage::Format_ARGB32);
+            customIco.fill(Qt::transparent);
+            QPixmap tmpPix;
+            if("icon1" == iconTag)
+            {
+                tmpPix.load(":/img/res/1.svg");
+            }
+            else if("icon2" == iconTag)
+            {
+                tmpPix.load(":/img/res/2.svg");
+            }
+            else if("icon3" == iconTag)
+            {
+                tmpPix.load(":/img/res/3.svg");
+            }
+
+            tmpPix = tmpPix.scaled(customIcoSize,customIcoSize);
+            QPainter painter(&customIco);
+            painter.setRenderHint(QPainter::Antialiasing);
+            painter.setPen(QRgb(0xf6a625));
+            painter.setBrush(painter.pen().color());
+            painter.drawPixmap(0,0,tmpPix);
+            iterator.value()->setBrush(customIco);
+            iterator.value()->setPen(QColor(Qt::transparent));
         }
-        m_pLineChart->legend()->update();
     }
 }
 

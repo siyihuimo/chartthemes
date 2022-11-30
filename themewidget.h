@@ -83,6 +83,8 @@ private slots:
     void serCurrentSeriesTrans(int);
     void setCurrentLegendHideState(int);
 
+    void setCurrentScatterIcon(QString);
+
 private:
     int m_listCount;
     int m_valueMax;

@@ -154,7 +154,18 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     seriesTransparentLayout->addWidget(m_pSeriesTransparentSlider);
     seriesTransparentLayout->addWidget(hideLegendBox);
 
-    QSpacerItem *spacerItem = new QSpacerItem(0,160,QSizePolicy::Expanding,QSizePolicy::Fixed);
+    QHBoxLayout* lineCustomIcoLayout = new QHBoxLayout(this);
+    QLabel *lineCustomIcoLabel = new QLabel(u8"set the polyline icon: ",this);
+    QComboBox *lineCustomIcoBox = new QComboBox(this);
+    connect(lineCustomIcoBox,&QComboBox::currentTextChanged,[=](const QString &text){emit setScatterIcon(text);});
+    QStringList customIconList;
+    customIconList<<u8"icon1"<<u8"icon2"<<u8"icon3";
+    lineCustomIcoBox->addItems(customIconList);
+    lineCustomIcoLayout->addWidget(lineCustomIcoLabel);
+    lineCustomIcoLayout->addWidget(lineCustomIcoBox);
+
+
+    //QSpacerItem *spacerItem = new QSpacerItem(0,160,QSizePolicy::Expanding,QSizePolicy::Fixed);
 
     tabLayout->addWidget(gridPropertyGroup);
     tabLayout->addWidget(unitPropertyGroup);
@@ -163,7 +174,8 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     tabLayout->addLayout(legendLayout);
     tabLayout->addLayout(legendTitleLayout);
     tabLayout->addLayout(seriesTransparentLayout);
-    tabLayout->addSpacerItem(spacerItem);
+    tabLayout->addLayout(lineCustomIcoLayout);
+ //   tabLayout->addSpacerItem(spacerItem);
 
 
     setMaximumWidth(240);
