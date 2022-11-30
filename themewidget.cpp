@@ -88,6 +88,12 @@ ThemeWidget::ThemeWidget(QWidget *parent) :
     connect(tabWidget,&SetChartPropertyWidget::setDisplayLabelState,this,&ThemeWidget::setLabelDisplayState);
     connect(tabWidget,&SetChartPropertyWidget::setLineWidth,this,&ThemeWidget::setCurrentLineWidth);
     connect(tabWidget,&SetChartPropertyWidget::setlegendPosition,this,&ThemeWidget::changeLegendPosition);
+    connect(tabWidget,&SetChartPropertyWidget::legendTextChange,this,&ThemeWidget::setLegendTitle);
+    connect(tabWidget,&SetChartPropertyWidget::setSeriesTransparent,this,&ThemeWidget::serCurrentSeriesTrans);
+    connect(tabWidget,&SetChartPropertyWidget::setLegendHideState,this,&ThemeWidget::setCurrentLegendHideState);
+
+    connect(this,&ThemeWidget::seriesClick,tabWidget,&SetChartPropertyWidget::setLengendTitle);
+    connect(this,&ThemeWidget::currentSeriesTrans,tabWidget,&SetChartPropertyWidget::setTransparent);
 
     baseLayout->addWidget(tabWidget, 0, 1);
 
@@ -140,13 +146,28 @@ void ThemeWidget::initLineChart()
     int nameIndex = 0;
     for (const DataList &list : m_dataTable)
     {
-        //        QScatterSeries *series1 = new QScatterSeries(m_pLineChart);             //散点
-        //        connect(series1, &QScatterSeries::hovered, this, &ThemeWidget::showPointHoverd);
-        //        series1->setMarkerShape(m_markerShapeRectangle.at(nameIndex%2));
-        //        series1->setMarkerSize(12);
+        QScatterSeries *series1 = new QScatterSeries(m_pLineChart);             //散点
+        series1->setMarkerShape(m_markerShapeRectangle.at(nameIndex%2));
+        int customIcoSize =10;
+        series1->setMarkerSize(customIcoSize);
+
+        QImage customIco(customIcoSize, customIcoSize, QImage::Format_ARGB32);
+        customIco.fill(Qt::transparent);
+
+        QPixmap tmpPix = QPixmap(":/img/shape2.png");
+        tmpPix = tmpPix.scaled(customIcoSize,customIcoSize);
+        QPainter painter(&customIco);
+        painter.setRenderHint(QPainter::Antialiasing);
+        painter.setPen(QRgb(0xf6a625));
+        painter.setBrush(painter.pen().color());
+        painter.drawPixmap(0,0,tmpPix);
+        series1->setBrush(customIco);
+        series1->setPen(QColor(Qt::transparent));
 
         QLineSeries *series = new QLineSeries(m_pLineChart);                //折线
         series->setObjectName(QString::number(nameIndex));
+
+        m_LineMapScatter.insert(series,series1);
 
         connect(series,&QXYSeries::clicked,[=](){
             m_pCurrentSeries = series;
@@ -162,22 +183,22 @@ void ThemeWidget::initLineChart()
                 }
                 ++itLegend;
             }
+            emit seriesClick(series->name());
         });
 
-        //        m_pLineChart->addSeries(series1);
+        m_pLineChart->addSeries(series1);
         m_pLineChart->addSeries(series);
-        //        series1->setColor(series->color());
+        series1->setColor(series->color());
 
         m_vecLineSeries.push_back(series);
-        //        m_vecLineSeries.push_back(series1);
+        m_vecLineSeries.push_back(series1);
 
         for (const Data &data : list)
         {
             series->append(data.first);
-            //            series1->append(data.first);
+            series1->append(data.first);
         }
         series->setName(name + QString::number(nameIndex));
-
 
         QLegend *pChartLegend1 = m_pLineChart->legend();
         if(pChartLegend1)
@@ -192,8 +213,14 @@ void ThemeWidget::initLineChart()
                         connect(tmpLegend,&QLegendMarker::clicked,[=](){
                             m_pCurrentEditLegend = tmpLegend;
                             setLegendSelectState();
+                            emit seriesClick(tmpLegend->label());
+                            m_pLastEditLegend->setShape(QLegend::MarkerShapeCircle);
                         });
                         m_LegendMapSeries.insert(tmpLegend,series);
+                    }
+                    else if(tmpLegend->label().isEmpty())
+                    {
+                        tmpLegend->setVisible(false);
                     }
                 }
             }
@@ -274,12 +301,54 @@ void ThemeWidget::setLegendSelectState()
 
 }
 
+void ThemeWidget::setLegendTitle(QString title)
+{
+    if(!m_pCurrentSeries || !m_pCurrentEditLegend)
+    {
+        return;
+    }
+    m_pCurrentSeries->setName(title);
+    m_pCurrentEditLegend->setLabel(title);
+}
+
+void ThemeWidget::serCurrentSeriesTrans(int transparent)
+{
+    if(m_pCurrentSeries)
+    {
+        double transValue = transparent / 100.0;
+        m_pCurrentSeries->setOpacity(transValue);
+
+        auto iterator = m_LineMapScatter.find(m_pCurrentSeries);
+        if(iterator != m_LineMapScatter.end())
+        {
+            iterator.value()->setOpacity(transValue);
+        }
+    }
+}
+
+void ThemeWidget::setCurrentLegendHideState(int state)
+{
+    if(m_pCurrentEditLegend)
+    {
+        if(Qt::Unchecked == state)
+        {
+            m_pCurrentEditLegend->setVisible(true);
+        }
+        else if(Qt::Checked == state)
+        {
+            m_pCurrentEditLegend->setVisible(false);
+        }
+        m_pLineChart->legend()->update();
+    }
+}
+
 
 void ThemeWidget::setSeriesSelectState(const QPointF &point)
 {
     Q_UNUSED(point) ;
     if(m_pCurrentSeries)
     {
+        emit currentSeriesTrans(m_pCurrentSeries->opacity());
         const QPen oldPen = m_pCurrentSeries->pen();
         QPen pen(oldPen);
         pen.setWidth(3);
@@ -313,9 +382,12 @@ void ThemeWidget::setGrideState(bool state)
 
 void ThemeWidget::setFontFamily(QString fontStr)
 {
-    QFont font = m_pLineChart->legend()->font();
-    font.setFamily(fontStr);
-    m_pLineChart->legend()->setFont(font);
+    if(m_pCurrentEditLegend)
+    {
+        QFont font = m_pCurrentEditLegend->font();
+        font.setFamily(fontStr);
+        m_pCurrentEditLegend->setFont(font);
+    }
 }
 
 void ThemeWidget::setFontSize(int size)

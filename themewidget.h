@@ -56,6 +56,10 @@ private:
 
     void initLineChart();
 
+signals:
+    void seriesClick(QString);
+    void currentSeriesTrans(qreal opacity);
+
 private slots:
     void showPointHoverd(const QPointF &point, bool state);
     void setGrideState(bool);
@@ -73,7 +77,11 @@ private slots:
 
     void recoverLineStatus();
     void setSeriesSelectState(const QPointF &point);
-    void setLegendSelectState();
+    void setLegendSelectState();    
+
+    void setLegendTitle(QString);
+    void serCurrentSeriesTrans(int);
+    void setCurrentLegendHideState(int);
 
 private:
     int m_listCount;
@@ -95,6 +103,8 @@ private:
     bool m_bShowPointLabel = false;
 
     QMap<QLegendMarker*,QXYSeries*> m_LegendMapSeries;
+    QMap<QXYSeries*,QXYSeries*> m_LineMapScatter;
+
     QLegendMarker* m_pLastEditLegend=nullptr;
     QLegendMarker* m_pCurrentEditLegend = nullptr;
 };

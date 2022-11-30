@@ -12,6 +12,7 @@
 #include <QDebug>
 #include <QPushButton>
 #include <QColorDialog>
+#include <QLineEdit>
 
 SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent)
 {    
@@ -83,7 +84,9 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
     connect(fontBoldCheck,&QCheckBox::stateChanged,[=](int state){emit setFontBold(state);});
     fontStyleLayout->addWidget(fontItalicsCheck);
     fontStyleLayout->addWidget(fontBoldCheck);
-
+    fontVerticalLayout->addLayout(fontLayout);
+    fontVerticalLayout->addLayout(fontSizeLayout);
+    fontVerticalLayout->addLayout(fontStyleLayout);
 
     QGroupBox* linePropertyGroup = new QGroupBox(this);
 
@@ -128,17 +131,38 @@ SetChartPropertyWidget::SetChartPropertyWidget(QWidget *parent) : QWidget(parent
 
 
 
-    QSpacerItem *spacerItem = new QSpacerItem(0,160,QSizePolicy::Expanding,QSizePolicy::Fixed);
+    QHBoxLayout *legendTitleLayout = new QHBoxLayout(this);
+    QLabel *legendTitleLabel = new QLabel(u8"set legend title: ",this);
+    m_pLegendTitleEdit = new QLineEdit(this);
+    connect(m_pLegendTitleEdit,&QLineEdit::textChanged,[=](const QString &text){emit legendTextChange(text);});
+    legendTitleLayout->addWidget(legendTitleLabel);
+    legendTitleLayout->addWidget(m_pLegendTitleEdit);
 
-    fontVerticalLayout->addLayout(fontLayout);
-    fontVerticalLayout->addLayout(fontSizeLayout);
-    fontVerticalLayout->addLayout(fontStyleLayout);
+    QVBoxLayout *seriesTransparentLayout = new QVBoxLayout(this);
+    QLabel *seriesTransparentLabel = new QLabel(u8"set opacity of the polyline: ",this);
+    m_pSeriesTransparentSlider = new QSlider(this);
+    m_pSeriesTransparentSlider->setRange(0,100);
+    m_pSeriesTransparentSlider->setSingleStep(1);
+    m_pSeriesTransparentSlider->setValue(0);
+    m_pSeriesTransparentSlider->setOrientation(Qt::Horizontal);
+    m_pSeriesTransparentSlider->setTickPosition(QSlider::TicksBelow);
+    connect(m_pSeriesTransparentSlider,&QSlider::valueChanged,[=](int value){emit setSeriesTransparent(value);});
+
+    QCheckBox *hideLegendBox = new QCheckBox(u8"hide legend",this);
+    connect(hideLegendBox,&QCheckBox::stateChanged,[=](int state){ emit setLegendHideState(state); });
+    seriesTransparentLayout->addWidget(seriesTransparentLabel);
+    seriesTransparentLayout->addWidget(m_pSeriesTransparentSlider);
+    seriesTransparentLayout->addWidget(hideLegendBox);
+
+    QSpacerItem *spacerItem = new QSpacerItem(0,160,QSizePolicy::Expanding,QSizePolicy::Fixed);
 
     tabLayout->addWidget(gridPropertyGroup);
     tabLayout->addWidget(unitPropertyGroup);
     tabLayout->addWidget(fontPropertyGroup);
     tabLayout->addWidget(linePropertyGroup);
     tabLayout->addLayout(legendLayout);
+    tabLayout->addLayout(legendTitleLayout);
+    tabLayout->addLayout(seriesTransparentLayout);
     tabLayout->addSpacerItem(spacerItem);
 
 
@@ -153,4 +177,19 @@ void SetChartPropertyWidget::setDefaultFontFamily(QString font)
 void SetChartPropertyWidget::setDefaultFontSize(int size)
 {
     m_pfontSizeSpinBox->setValue(size);
+}
+
+void SetChartPropertyWidget::setLengendTitle(QString title)
+{
+    if(m_pLegendTitleEdit)
+    {
+        m_pLegendTitleEdit->setText(title);
+    }
+}
+
+void SetChartPropertyWidget::setTransparent(qreal value)
+{
+    value*=100;
+    m_pSeriesTransparentSlider->setValue(value);
+
 }

@@ -13,3 +13,6 @@ SOURCES += \
 
 target.path = $$[QT_INSTALL_EXAMPLES]/charts/chartthemes
 INSTALLS += target
+
+RESOURCES += \
+    res.qrc

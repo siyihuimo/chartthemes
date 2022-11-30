@@ -28,12 +28,23 @@ signals:
     void setDisplayLabelState(int);
     void setLineWidth(int);
     void setlegendPosition(QString);
+    void legendTextChange(QString);
+    void setSeriesTransparent(int);
+    void setLegendHideState(int);
 
 public slots:
+
+public slots:
+    void setLengendTitle(QString);
+    void setTransparent(qreal);
 
 private:
     QSpinBox *m_pfontSizeSpinBox = nullptr;
     QComboBox *m_pfontComboBox = nullptr;
+
+    QLineEdit *m_pLegendTitleEdit = nullptr;
+
+    QSlider *m_pSeriesTransparentSlider = nullptr;
 };
 
 #endif // SETCHARTPROPERTYWIDGET_H
